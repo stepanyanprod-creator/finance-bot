@@ -6,6 +6,8 @@ from flask import Flask, jsonify
 import os
 import threading
 import time
+from data_sync import DataSync
+from auto_save_hook import init_auto_save
 
 app = Flask(__name__)
 
@@ -39,7 +41,8 @@ def run_bot():
     from app.commands import (
         start_command, menu_command, hide_menu_command, export_csv_command,
         rules_list_command, setcat_command, delrule_command, setbalance_command,
-        import_csv_command, export_balances_command, export_monthly_command, export_last_months_command
+        import_csv_command, export_balances_command, export_monthly_command, export_last_months_command,
+        sync_data_command, sync_status_command, force_sync_command
     )
     from app.handlers.balance import build_balance_conv
     from app.handlers.transfer import build_transfer_conv
@@ -103,6 +106,11 @@ def run_bot():
         app.add_handler(CommandHandler("export_balances", export_balances_command))
         app.add_handler(CommandHandler("export_monthly", export_monthly_command))
         app.add_handler(CommandHandler("export_last_months", export_last_months_command))
+        
+        # Команды синхронизации данных
+        app.add_handler(CommandHandler("sync", sync_data_command))
+        app.add_handler(CommandHandler("sync_status", sync_status_command))
+        app.add_handler(CommandHandler("force_sync", force_sync_command))
         
         # Конверсейшн: обмен между счетами (должен быть ПЕРЕД балансом)
         transfer_conv = build_transfer_conv()
@@ -255,6 +263,11 @@ def run_bot():
         app.add_error_handler(error_handler)
         
         logger.info("Bot started successfully in web server mode")
+        
+        # Инициализируем автоматическое сохранение данных
+        data_sync = DataSync()
+        auto_save = init_auto_save(data_sync, save_interval=300)  # Сохранение каждые 5 минут
+        logger.info("Автоматическое сохранение данных активировано")
         
         # Запускаем бота с обработкой graceful shutdown
         app.run_polling(
