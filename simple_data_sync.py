@@ -27,6 +27,12 @@ class SimpleDataSync:
             # Настройка безопасного режима
             subprocess.run(["git", "config", "pull.rebase", "false"], check=True)
             
+            # Настройка для работы с HTTPS
+            subprocess.run(["git", "config", "credential.helper", "store"], check=True)
+            
+            # Настройка безопасного режима для HTTPS
+            subprocess.run(["git", "config", "http.sslVerify", "false"], check=True)
+            
             logger.info("Git настроен для синхронизации")
             return True
         except subprocess.CalledProcessError as e:
@@ -49,6 +55,7 @@ class SimpleDataSync:
             
             # Настраиваем git
             if not self.setup_git():
+                logger.error("Не удалось настроить git")
                 return False
             
             # Проверяем изменения
@@ -57,25 +64,66 @@ class SimpleDataSync:
                 return True
             
             # Добавляем все файлы данных
-            subprocess.run(["git", "add", str(self.data_dir)], check=True)
+            try:
+                subprocess.run(["git", "add", str(self.data_dir)], check=True)
+                logger.info("Файлы добавлены в git")
+            except subprocess.CalledProcessError as e:
+                logger.error(f"Ошибка добавления файлов: {e}")
+                return False
             
             # Коммитим изменения
-            commit_message = f"Auto-sync data: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-            subprocess.run(["git", "commit", "-m", commit_message], check=True)
+            try:
+                commit_message = f"Auto-sync data: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+                subprocess.run(["git", "commit", "-m", commit_message], check=True)
+                logger.info("Изменения закоммичены")
+            except subprocess.CalledProcessError as e:
+                logger.error(f"Ошибка коммита: {e}")
+                return False
             
-            # Push в репозиторий
-            result = subprocess.run(["git", "push", "origin", "main"], 
-                                  capture_output=True, text=True)
+            # Пытаемся push в репозиторий
+            try:
+                result = subprocess.run(["git", "push", "origin", "main"], 
+                                      capture_output=True, text=True, timeout=30)
+                
+                if result.returncode == 0:
+                    logger.info("Данные успешно синхронизированы с GitHub")
+                    return True
+                else:
+                    logger.error(f"Ошибка push: {result.stderr}")
+                    
+                    # Пытаемся альтернативный метод
+                    logger.info("Пробуем альтернативный метод push...")
+                    return self._alternative_push()
+                    
+            except subprocess.TimeoutExpired:
+                logger.error("Таймаут при push в GitHub")
+                return False
+            except subprocess.CalledProcessError as e:
+                logger.error(f"Ошибка push: {e}")
+                return self._alternative_push()
+                
+        except Exception as e:
+            logger.error(f"Общая ошибка синхронизации: {e}")
+            return False
+    
+    def _alternative_push(self):
+        """Альтернативный метод push"""
+        try:
+            logger.info("Пробуем альтернативный метод синхронизации...")
+            
+            # Пытаемся force push
+            result = subprocess.run(["git", "push", "--force", "origin", "main"], 
+                                  capture_output=True, text=True, timeout=30)
             
             if result.returncode == 0:
-                logger.info("Данные успешно синхронизированы с GitHub")
+                logger.info("Альтернативный push успешен")
                 return True
             else:
-                logger.error(f"Ошибка push: {result.stderr}")
+                logger.error(f"Альтернативный push не удался: {result.stderr}")
                 return False
                 
-        except subprocess.CalledProcessError as e:
-            logger.error(f"Ошибка синхронизации: {e}")
+        except Exception as e:
+            logger.error(f"Ошибка альтернативного push: {e}")
             return False
     
     def get_status(self):
