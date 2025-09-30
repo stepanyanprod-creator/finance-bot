@@ -1,0 +1,38 @@
+{
+  "DB": {
+    "currency": "EUR",
+    "amount": 0.0
+  },
+  "Bargeld": {
+    "currency": "EUR",
+    "amount": 10.21
+  },
+  "Karte Volksbank": {
+    "currency": "EUR",
+    "amount": 1203.95
+  },
+  "Karte Klarna": {
+    "currency": "EUR",
+    "amount": -160.46
+  },
+  "Karte Monobank Debit": {
+    "currency": "EUR",
+    "amount": -958.7
+  },
+  "Karte Monobank Kredit": {
+    "currency": "EUR",
+    "amount": -43821.71
+  },
+  "Colosseum Debit": {
+    "currency": "EUR",
+    "amount": 83905.82
+  },
+  "Colosseum Kredit": {
+    "currency": "EUR",
+    "amount": -350000.0
+  },
+  "Spargeld 10%": {
+    "currency": "EUR",
+    "amount": 70.0
+  }
+}

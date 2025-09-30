@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  finance-bot:
+    build: .
+    container_name: finance-bot
+    restart: unless-stopped
+    environment:
+      - BOT_TOKEN=${BOT_TOKEN}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - DATA_DIR=/app/data
+      - DEBUG=false
+    volumes:
+      - ./data:/app/data
+      - ./exports:/app/exports
+      - ./logs:/app/logs
+    networks:
+      - finance-bot-network
+
+  # Опционально: PostgreSQL для будущей миграции
+  postgres:
+    image: postgres:15-alpine
+    container_name: finance-bot-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=finance_bot
+      - POSTGRES_USER=finance_user
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - finance-bot-network
+    profiles:
+      - database
+
+  # Опционально: Redis для кэширования
+  redis:
+    image: redis:7-alpine
+    container_name: finance-bot-redis
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    networks:
+      - finance-bot-network
+    profiles:
+      - cache
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  finance-bot-network:
+    driver: bridge

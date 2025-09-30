@@ -1,0 +1,5 @@
+httpx==0.28.1
+openai==1.108.0
+pillow==11.3.0
+python-dotenv==1.1.1
+python-telegram-bot==22.4

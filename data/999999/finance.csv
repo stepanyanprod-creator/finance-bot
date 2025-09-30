@@ -1,0 +1,5 @@
+date,merchant,total,currency,category,payment_method,source
+2025-09-18,Перевод на Test Wallet,-200.0,UAH,Банковские операции,Test Bank,transfer
+2025-09-18,Перевод с Test Bank,200.0,UAH,Банковские операции,Test Wallet,transfer
+2025-09-18,Перевод на Test Wallet,-200.0,UAH,Банковские операции,Test Bank,transfer
+2025-09-18,Перевод с Test Bank,200.0,UAH,Банковские операции,Test Wallet,transfer

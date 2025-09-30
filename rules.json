@@ -1,0 +1,16 @@
+[
+  {
+    "id": 1,
+    "category": "groceries",
+    "match": {
+      "merchant_contains": ["aldi", "lidl", "rewe"]
+    }
+  },
+  {
+    "id": 2,
+    "category": "cafe",
+    "match": {
+      "item_contains": ["latte", "капучино", "кофе"]
+    }
+  }
+]

@@ -1,0 +1,30 @@
+{
+  "USD Account": {
+    "currency": "USD",
+    "amount": 900.0
+  },
+  "EUR Account": {
+    "currency": "EUR",
+    "amount": 590.0
+  },
+  "Poor Account": {
+    "currency": "UAH",
+    "amount": 50.0
+  },
+  "Rich Account": {
+    "currency": "UAH",
+    "amount": 1000.0
+  },
+  "Single Account": {
+    "currency": "UAH",
+    "amount": 1000.0
+  },
+  "Test Bank": {
+    "currency": "UAH",
+    "amount": 800.0
+  },
+  "Test Wallet": {
+    "currency": "UAH",
+    "amount": 700.0
+  }
+}
