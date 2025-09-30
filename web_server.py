@@ -40,7 +40,7 @@ def run_bot():
         start_command, menu_command, hide_menu_command, export_csv_command,
         rules_list_command, setcat_command, delrule_command, setbalance_command,
         import_csv_command, export_balances_command, export_monthly_command, export_last_months_command,
-        sync_data_command, sync_status_command, force_sync_command, init_git_command
+        sync_data_command, sync_status_command, force_sync_command, init_git_command, check_data_command, upload_all_command
     )
     from app.handlers.balance import build_balance_conv
     from app.handlers.transfer import build_transfer_conv
@@ -110,6 +110,8 @@ def run_bot():
         app.add_handler(CommandHandler("sync_status", sync_status_command))
         app.add_handler(CommandHandler("force_sync", force_sync_command))
         app.add_handler(CommandHandler("init_git", init_git_command))
+        app.add_handler(CommandHandler("check_data", check_data_command))
+        app.add_handler(CommandHandler("upload_all", upload_all_command))
         
         # Конверсейшн: обмен между счетами (должен быть ПЕРЕД балансом)
         transfer_conv = build_transfer_conv()

@@ -42,11 +42,31 @@ class SimpleDataSync:
     def has_changes(self):
         """Проверка наличия изменений"""
         try:
+            # Сначала добавляем все файлы данных в git
+            self._add_all_data_files()
+            
+            # Проверяем статус
             result = subprocess.run(["git", "status", "--porcelain"], 
                                   capture_output=True, text=True)
             return bool(result.stdout.strip())
         except subprocess.CalledProcessError:
             return False
+    
+    def _add_all_data_files(self):
+        """Добавляет все файлы данных в git"""
+        try:
+            # Добавляем все файлы в папке data
+            subprocess.run(["git", "add", str(self.data_dir)], check=True)
+            
+            # Добавляем конкретные файлы пользователей
+            for user_dir in self.data_dir.glob("*"):
+                if user_dir.is_dir():
+                    # Добавляем все файлы в папке пользователя
+                    subprocess.run(["git", "add", str(user_dir)], check=True)
+                    
+            logger.info("Все файлы данных добавлены в git")
+        except subprocess.CalledProcessError as e:
+            logger.error(f"Ошибка добавления файлов: {e}")
     
     def sync_data(self):
         """Синхронизация данных с GitHub"""
@@ -78,8 +98,18 @@ class SimpleDataSync:
             
             # Добавляем все файлы данных
             try:
+                # Принудительно добавляем все файлы данных
+                self._add_all_data_files()
+                
+                # Дополнительно добавляем все файлы в data
                 subprocess.run(["git", "add", str(self.data_dir)], check=True)
-                logger.info("Файлы добавлены в git")
+                
+                # Добавляем конкретные типы файлов
+                for pattern in ["*.json", "*.csv", "*.txt"]:
+                    subprocess.run(["git", "add", f"{self.data_dir}/**/{pattern}"], 
+                                 check=True, shell=True)
+                
+                logger.info("Все файлы данных принудительно добавлены в git")
             except subprocess.CalledProcessError as e:
                 logger.error(f"Ошибка добавления файлов: {e}")
                 return False
