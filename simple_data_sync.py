@@ -20,11 +20,20 @@ class SimpleDataSync:
     def setup_git(self):
         """Настройка git для синхронизации"""
         try:
-            # Настройка пользователя git
-            subprocess.run(["git", "config", "user.name", "Finance Bot"], check=True)
-            subprocess.run(["git", "config", "user.email", "bot@finance.local"], check=True)
-            subprocess.run(["git", "config", "--global", "user.name", "Finance Bot"], check=True)
-            subprocess.run(["git", "config", "--global", "user.email", "bot@finance.local"], check=True)
+            # Пробуем использовать улучшенную настройку
+            try:
+                from setup_git_config import setup_git_config, force_git_config
+                if not setup_git_config():
+                    logger.warning("Обычная настройка не удалась, пробуем принудительную")
+                    if not force_git_config():
+                        logger.error("Не удалось настроить git пользователя")
+                        return False
+            except ImportError:
+                # Fallback к старому методу
+                subprocess.run(["git", "config", "user.name", "Finance Bot"], check=True)
+                subprocess.run(["git", "config", "user.email", "bot@finance.local"], check=True)
+                subprocess.run(["git", "config", "--global", "user.name", "Finance Bot"], check=True)
+                subprocess.run(["git", "config", "--global", "user.email", "bot@finance.local"], check=True)
             
             # Настройка безопасного режима
             subprocess.run(["git", "config", "pull.rebase", "false"], check=True)
