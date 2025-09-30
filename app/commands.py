@@ -889,3 +889,117 @@ async def setup_render_auth_command(update: Update, context: ContextTypes.DEFAUL
         await update.message.reply_text(
             "❌ Произошла ошибка при показе инструкции"
         )
+
+async def setup_auth_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Команда для настройки аутентификации GitHub"""
+    try:
+        user_id = update.effective_user.id
+        logger.info(f"Пользователь {user_id} запросил настройку аутентификации")
+        
+        # Показываем прогресс
+        progress_msg = await update.message.reply_text("🔐 Настраиваю аутентификацию GitHub...")
+        
+        try:
+            import subprocess
+            import os
+            
+            # Проверяем токен
+            github_token = os.getenv("GITHUB_TOKEN")
+            if github_token:
+                await progress_msg.edit_text("🔑 Найден GITHUB_TOKEN, настраиваю аутентификацию...")
+                
+                # Настраиваем URL с токеном
+                repo_url = f"https://{github_token}@github.com/stepanyanprod-creator/finance-bot.git"
+                subprocess.run(['git', 'remote', 'set-url', 'origin', repo_url], check=True)
+                
+                # Тестируем подключение
+                await progress_msg.edit_text("🧪 Тестирую подключение...")
+                result = subprocess.run(['git', 'fetch', 'origin'], 
+                                      capture_output=True, text=True, timeout=30)
+                
+                if result.returncode == 0:
+                    await progress_msg.edit_text(
+                        "✅ **АУТЕНТИФИКАЦИЯ НАСТРОЕНА!**\n\n"
+                        "🔑 Используется GITHUB_TOKEN\n"
+                        "🔗 Подключение к GitHub работает\n\n"
+                        "💡 Теперь используйте /sync для синхронизации"
+                    )
+                else:
+                    await progress_msg.edit_text(
+                        "❌ **Ошибка аутентификации**\n\n"
+                        f"Ошибка: {result.stderr}\n\n"
+                        "💡 Проверьте GITHUB_TOKEN в Render"
+                    )
+            else:
+                await progress_msg.edit_text("🔄 Токен не найден, пробую простую настройку...")
+                
+                # Простая настройка без токена
+                repo_url = "https://github.com/stepanyanprod-creator/finance-bot.git"
+                subprocess.run(['git', 'remote', 'set-url', 'origin', repo_url], check=True)
+                
+                # Тестируем подключение
+                await progress_msg.edit_text("🧪 Тестирую подключение...")
+                result = subprocess.run(['git', 'fetch', 'origin'], 
+                                      capture_output=True, text=True, timeout=30)
+                
+                if result.returncode == 0:
+                    await progress_msg.edit_text(
+                        "✅ **ПРОСТАЯ АУТЕНТИФИКАЦИЯ РАБОТАЕТ!**\n\n"
+                        "🔗 Подключение к GitHub работает\n"
+                        "📁 Репозиторий доступен публично\n\n"
+                        "💡 Теперь используйте /sync для синхронизации"
+                    )
+                else:
+                    await progress_msg.edit_text(
+                        "❌ **АУТЕНТИФИКАЦИЯ НЕ РАБОТАЕТ**\n\n"
+                        f"Ошибка: {result.stderr}\n\n"
+                        "💡 Решения:\n"
+                        "1. Установите GITHUB_TOKEN в Render\n"
+                        "2. Проверьте права доступа к репозиторию\n"
+                        "3. Убедитесь, что репозиторий публичный"
+                    )
+                
+        except subprocess.CalledProcessError as e:
+            await progress_msg.edit_text(
+                "❌ **Ошибка настройки аутентификации**\n\n"
+                f"Ошибка: {e}\n\n"
+                "💡 Обратитесь к администратору"
+            )
+        except Exception as e:
+            await progress_msg.edit_text(
+                "❌ **Общая ошибка**\n\n"
+                f"Ошибка: {e}\n\n"
+                "💡 Обратитесь к администратору"
+            )
+            
+    except Exception as e:
+        logger.error(f"Ошибка в команде настройки аутентификации: {e}")
+        await update.message.reply_text(
+            "❌ Произошла ошибка при настройке аутентификации"
+        )
+
+async def set_token_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Команда для установки GitHub токена"""
+    try:
+        user_id = update.effective_user.id
+        logger.info(f"Пользователь {user_id} запросил установку токена")
+        
+        # Показываем инструкцию
+        await update.message.reply_text(
+            "🔑 **НАСТРОЙКА GITHUB TOKEN**\n\n"
+            "📋 **Инструкция:**\n"
+            "1. Перейдите: https://github.com/settings/tokens\n"
+            "2. Нажмите 'Generate new token (classic)'\n"
+            "3. Выберите 'repo' scope\n"
+            "4. Скопируйте токен\n\n"
+            "💡 **После получения токена:**\n"
+            "• Используйте /setup_auth для автоматической настройки\n"
+            "• Или настройте вручную через терминал\n\n"
+            "🔗 **Альтернатива:** Загрузите .gitignore вручную через веб-интерфейс GitHub"
+        )
+        
+    except Exception as e:
+        logger.error(f"Ошибка в команде установки токена: {e}")
+        await update.message.reply_text(
+            "❌ Произошла ошибка при показе инструкции"
+        )
