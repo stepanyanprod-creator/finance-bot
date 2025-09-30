@@ -8,6 +8,7 @@ from app.utils import get_user_id
 from app.storage import ensure_csv
 from app.keyboards import reply_menu_keyboard
 from app.logger import get_logger
+from app.commands.sync import sync_data_command, sync_status_command, force_sync_command
 
 logger = get_logger(__name__)
 
@@ -28,6 +29,9 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "• /export_balances — экспорт балансов в CSV\n"
         "• /export_monthly [год] [месяц] — экспорт по месяцам с таблицами\n"
         "• /export_last_months [N] — экспорт за последние N месяцев\n"
+        "• /sync — синхронизация данных с GitHub\n"
+        "• /sync_status — статус синхронизации\n"
+        "• /force_sync — принудительная синхронизация\n"
         "• /import_csv — импорт балансов из CSV файла\n"
         "• /setbalance <amount> <currency> | /setbalance <amount> <category> <currency>\n"
         "• /balance — меню Баланс\n"
