@@ -30,5 +30,9 @@
   "Spargeld 10%": {
     "currency": "EUR",
     "amount": 70.0
+  },
+  "Test Account": {
+    "currency": "EUR",
+    "amount": 100.0
   }
 }
