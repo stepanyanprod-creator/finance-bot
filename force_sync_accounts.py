@@ -17,6 +17,15 @@ def force_sync_accounts():
     try:
         logger.info("Начинаем принудительную синхронизацию accounts.json...")
         
+        # Настраиваем git пользователя
+        try:
+            subprocess.run(['git', 'config', 'user.name', 'Finance Bot'], check=True)
+            subprocess.run(['git', 'config', 'user.email', 'bot@finance.local'], check=True)
+            logger.info("Git пользователь настроен")
+        except subprocess.CalledProcessError as e:
+            logger.error(f"Ошибка настройки git пользователя: {e}")
+            return False
+        
         # Находим все файлы accounts.json
         data_dir = Path("data")
         accounts_files = list(data_dir.glob("*/accounts.json"))

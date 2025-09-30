@@ -27,7 +27,9 @@ def init_git_repository():
         # Настраиваем пользователя git
         subprocess.run(['git', 'config', 'user.name', 'Finance Bot'], check=True)
         subprocess.run(['git', 'config', 'user.email', 'bot@finance.local'], check=True)
-        logger.info("Git пользователь настроен")
+        subprocess.run(['git', 'config', '--global', 'user.name', 'Finance Bot'], check=True)
+        subprocess.run(['git', 'config', '--global', 'user.email', 'bot@finance.local'], check=True)
+        logger.info("Git пользователь настроен (локально и глобально)")
         
         # Добавляем remote origin
         repo_url = "https://github.com/stepanyanprod-creator/finance-bot.git"

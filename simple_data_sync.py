@@ -23,6 +23,8 @@ class SimpleDataSync:
             # Настройка пользователя git
             subprocess.run(["git", "config", "user.name", "Finance Bot"], check=True)
             subprocess.run(["git", "config", "user.email", "bot@finance.local"], check=True)
+            subprocess.run(["git", "config", "--global", "user.name", "Finance Bot"], check=True)
+            subprocess.run(["git", "config", "--global", "user.email", "bot@finance.local"], check=True)
             
             # Настройка безопасного режима
             subprocess.run(["git", "config", "pull.rebase", "false"], check=True)
