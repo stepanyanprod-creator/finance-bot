@@ -33,7 +33,8 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "• /force_sync — принудительная синхронизация\n"
         "• /init_git — инициализация git репозитория\n"
         "• /check_data — проверить файлы данных\n"
-        "• /upload_all — загрузить все изменения в GitHub (временно недоступно)\n"
+        "• /upload_all — загрузить все изменения в GitHub\n"
+        "• /setup_render_auth — настроить аутентификацию на Render\n"
         "• /import_csv — импорт балансов из CSV файла\n"
         "• /setbalance <amount> <currency> | /setbalance <amount> <category> <currency>\n"
         "• /balance — меню Баланс\n"
@@ -858,4 +859,33 @@ async def upload_all_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
         logger.error(f"Ошибка в команде загрузки: {e}")
         await update.message.reply_text(
             "❌ Произошла ошибка при загрузке в GitHub"
+        )
+
+async def setup_render_auth_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Команда для настройки аутентификации на Render"""
+    try:
+        user_id = update.effective_user.id
+        logger.info(f"Пользователь {user_id} запросил настройку аутентификации на Render")
+        
+        await update.message.reply_text(
+            "🔧 **НАСТРОЙКА АУТЕНТИФИКАЦИИ НА RENDER**\n\n"
+            "📋 **Инструкция:**\n"
+            "1. Откройте Render Dashboard: https://dashboard.render.com\n"
+            "2. Выберите ваш сервис 'finance-bot'\n"
+            "3. Перейдите в раздел 'Environment'\n"
+            "4. Добавьте переменную окружения:\n"
+            "   • **Key:** `GITHUB_TOKEN`\n"
+            "   • **Value:** `YOUR_GITHUB_TOKEN` (замените на ваш токен)\n"
+            "5. Нажмите 'Save Changes'\n"
+            "6. Дождитесь перезапуска сервиса\n\n"
+            "💡 **После настройки:**\n"
+            "• Используйте /setup_auth для проверки\n"
+            "• Используйте /force_sync для синхронизации\n\n"
+            "🔗 **Альтернатива:** Настройте токен в Render Dashboard"
+        )
+        
+    except Exception as e:
+        logger.error(f"Ошибка в команде настройки Render аутентификации: {e}")
+        await update.message.reply_text(
+            "❌ Произошла ошибка при показе инструкции"
         )
