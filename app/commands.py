@@ -1007,3 +1007,50 @@ async def set_token_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(
             "❌ Произошла ошибка при показе инструкции"
         )
+
+async def force_sync_accounts_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Команда для принудительной синхронизации accounts.json"""
+    try:
+        user_id = update.effective_user.id
+        logger.info(f"Пользователь {user_id} запросил принудительную синхронизацию accounts.json")
+        
+        # Показываем прогресс
+        progress_msg = await update.message.reply_text("🔄 Принудительная синхронизация accounts.json...")
+        
+        try:
+            from force_sync_accounts import force_sync_accounts, get_accounts_status
+            
+            # Получаем статус
+            status = get_accounts_status()
+            await progress_msg.edit_text(f"📊 Найдено {status['accounts_files_count']} файлов accounts.json...")
+            
+            # Выполняем синхронизацию
+            success = force_sync_accounts()
+            
+            if success:
+                await progress_msg.edit_text(
+                    "✅ **ACCOUNTS.JSON СИНХРОНИЗИРОВАН!**\n\n"
+                    f"📊 **Файлов обработано:** {status['accounts_files_count']}\n"
+                    f"📁 **Файлы:** {', '.join([Path(f).name for f in status['accounts_files']])}\n"
+                    f"🔗 **GitHub:** https://github.com/stepanyanprod-creator/finance-bot\n\n"
+                    "💡 Все файлы accounts.json теперь в GitHub!"
+                )
+            else:
+                await progress_msg.edit_text(
+                    "❌ **Ошибка синхронизации accounts.json**\n\n"
+                    "Не удалось синхронизировать файлы\n"
+                    "Проверьте настройки git или попробуйте позже"
+                )
+                
+        except ImportError:
+            await progress_msg.edit_text(
+                "⚠️ **Модуль синхронизации недоступен**\n\n"
+                "Модуль force_sync_accounts не найден\n"
+                "Обратитесь к администратору"
+            )
+            
+    except Exception as e:
+        logger.error(f"Ошибка в команде синхронизации accounts.json: {e}")
+        await update.message.reply_text(
+            "❌ Произошла ошибка при синхронизации accounts.json"
+        )
