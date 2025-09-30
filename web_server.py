@@ -6,8 +6,6 @@ from flask import Flask, jsonify
 import os
 import threading
 import time
-from data_sync import DataSync
-from auto_save_hook import init_auto_save
 
 app = Flask(__name__)
 
@@ -263,11 +261,6 @@ def run_bot():
         app.add_error_handler(error_handler)
         
         logger.info("Bot started successfully in web server mode")
-        
-        # Инициализируем автоматическое сохранение данных
-        data_sync = DataSync()
-        auto_save = init_auto_save(data_sync, save_interval=300)  # Сохранение каждые 5 минут
-        logger.info("Автоматическое сохранение данных активировано")
         
         # Запускаем бота с обработкой graceful shutdown
         app.run_polling(
