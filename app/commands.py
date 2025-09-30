@@ -33,6 +33,7 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "• /force_sync — принудительная синхронизация\n"
         "• /init_git — инициализация git репозитория\n"
         "• /check_data — проверить файлы данных\n"
+        "• /upload_all — загрузить все изменения в GitHub (временно недоступно)\n"
         "• /import_csv — импорт балансов из CSV файла\n"
         "• /setbalance <amount> <currency> | /setbalance <amount> <category> <currency>\n"
         "• /balance — меню Баланс\n"
@@ -780,4 +781,81 @@ async def check_data_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
         logger.error(f"Ошибка в команде проверки данных: {e}")
         await update.message.reply_text(
             "❌ Произошла ошибка при проверке данных"
+        )
+
+async def upload_all_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Команда для загрузки всех изменений в GitHub"""
+    try:
+        user_id = update.effective_user.id
+        logger.info(f"Пользователь {user_id} запросил загрузку всех изменений")
+        
+        # Показываем прогресс
+        progress_msg = await update.message.reply_text("🚀 Загружаю все изменения в GitHub...")
+        
+        try:
+            import subprocess
+            from datetime import datetime
+            
+            # Проверяем git статус
+            await progress_msg.edit_text("🔍 Проверяю изменения...")
+            status_result = subprocess.run(['git', 'status', '--porcelain'], 
+                                        capture_output=True, text=True)
+            
+            if not status_result.stdout.strip():
+                await progress_msg.edit_text(
+                    "✅ **Нет изменений для загрузки**\n\n"
+                    "Все файлы уже синхронизированы с GitHub"
+                )
+                return
+            
+            # Показываем найденные изменения
+            changes_count = len(status_result.stdout.strip().split('\n'))
+            await progress_msg.edit_text(f"📋 Найдено {changes_count} изменений...")
+            
+            # Добавляем все файлы
+            await progress_msg.edit_text("📁 Добавляю все файлы...")
+            subprocess.run(['git', 'add', '.'], check=True)
+            
+            # Создаем коммит
+            await progress_msg.edit_text("💾 Создаю коммит...")
+            commit_message = f"Auto-upload all changes: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+            subprocess.run(['git', 'commit', '-m', commit_message], check=True)
+            
+            # Push в GitHub
+            await progress_msg.edit_text("🚀 Отправляю в GitHub...")
+            push_result = subprocess.run(['git', 'push', 'origin', 'main'], 
+                                       capture_output=True, text=True, timeout=60)
+            
+            if push_result.returncode == 0:
+                await progress_msg.edit_text(
+                    "✅ **ВСЕ ИЗМЕНЕНИЯ ЗАГРУЖЕНЫ В GITHUB!**\n\n"
+                    f"📊 **Загружено файлов:** {changes_count}\n"
+                    f"💾 **Коммит:** {commit_message}\n"
+                    f"🔗 **Репозиторий:** https://github.com/stepanyanprod-creator/finance-bot\n\n"
+                    "💡 Все ваши данные теперь в GitHub!"
+                )
+            else:
+                await progress_msg.edit_text(
+                    "❌ **Ошибка загрузки в GitHub**\n\n"
+                    f"Ошибка: {push_result.stderr}\n\n"
+                    "💡 Попробуйте /init_git для настройки"
+                )
+                
+        except subprocess.CalledProcessError as e:
+            await progress_msg.edit_text(
+                "❌ **Ошибка git операции**\n\n"
+                f"Ошибка: {e}\n\n"
+                "💡 Попробуйте /init_git для настройки"
+            )
+        except Exception as e:
+            await progress_msg.edit_text(
+                "❌ **Общая ошибка**\n\n"
+                f"Ошибка: {e}\n\n"
+                "💡 Обратитесь к администратору"
+            )
+            
+    except Exception as e:
+        logger.error(f"Ошибка в команде загрузки: {e}")
+        await update.message.reply_text(
+            "❌ Произошла ошибка при загрузке в GitHub"
         )
