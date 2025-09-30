@@ -32,6 +32,7 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "• /sync_status — статус синхронизации\n"
         "• /force_sync — принудительная синхронизация\n"
         "• /init_git — инициализация git репозитория\n"
+        "• /check_data — проверить файлы данных\n"
         "• /import_csv — импорт балансов из CSV файла\n"
         "• /setbalance <amount> <currency> | /setbalance <amount> <category> <currency>\n"
         "• /balance — меню Баланс\n"
@@ -596,27 +597,57 @@ async def force_sync_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
         logger.info(f"Пользователь {user_id} запросил принудительную синхронизацию")
         
         # Показываем прогресс
-        progress_msg = await update.message.reply_text("🔄 Принудительная синхронизация...")
+        progress_msg = await update.message.reply_text("🔄 Принудительная синхронизация всех файлов...")
         
         # Импортируем и используем реальную синхронизацию
         try:
-            from simple_data_sync import sync_data_now
+            from simple_data_sync import SimpleDataSync
             
-            # Выполняем принудительную синхронизацию
-            success = sync_data_now()
+            # Создаем экземпляр синхронизации
+            sync = SimpleDataSync()
             
-            if success:
-                await progress_msg.edit_text(
-                    "✅ **Принудительная синхронизация завершена**\n\n"
-                    "📊 Все данные принудительно сохранены\n"
-                    "🔄 Изменения отправлены в GitHub\n\n"
-                    "💡 Используйте /sync_status для проверки"
-                )
-            else:
+            # Принудительно добавляем все файлы
+            await progress_msg.edit_text("📁 Добавляю все файлы данных в git...")
+            sync._add_all_data_files()
+            
+            # Принудительно коммитим все изменения
+            await progress_msg.edit_text("💾 Коммичу все изменения...")
+            try:
+                import subprocess
+                from datetime import datetime
+                
+                # Добавляем все файлы
+                subprocess.run(["git", "add", "."], check=True)
+                
+                # Коммитим
+                commit_message = f"Force sync all data: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+                subprocess.run(["git", "commit", "-m", commit_message], check=True)
+                
+                # Push
+                await progress_msg.edit_text("🚀 Отправляю изменения в GitHub...")
+                result = subprocess.run(["git", "push", "origin", "main"], 
+                                      capture_output=True, text=True, timeout=30)
+                
+                if result.returncode == 0:
+                    await progress_msg.edit_text(
+                        "✅ **Принудительная синхронизация завершена**\n\n"
+                        "📊 ВСЕ файлы данных принудительно сохранены\n"
+                        "🔄 Изменения отправлены в GitHub\n"
+                        "📁 Включая accounts.json и другие файлы\n\n"
+                        "💡 Проверьте GitHub репозиторий"
+                    )
+                else:
+                    await progress_msg.edit_text(
+                        "❌ **Ошибка отправки в GitHub**\n\n"
+                        f"Ошибка: {result.stderr}\n"
+                        "💡 Попробуйте /init_git для настройки"
+                    )
+                    
+            except subprocess.CalledProcessError as e:
                 await progress_msg.edit_text(
                     "❌ **Ошибка принудительной синхронизации**\n\n"
-                    "Не удалось выполнить принудительное сохранение\n"
-                    "Проверьте настройки git или попробуйте позже"
+                    f"Ошибка: {e}\n"
+                    "💡 Попробуйте /init_git для настройки"
                 )
                 
         except ImportError:
@@ -681,4 +712,72 @@ async def init_git_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         logger.error(f"Ошибка в команде инициализации git: {e}")
         await update.message.reply_text(
             "❌ Произошла ошибка при инициализации git"
+        )
+
+async def check_data_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Команда для проверки файлов данных"""
+    try:
+        user_id = update.effective_user.id
+        logger.info(f"Пользователь {user_id} запросил проверку данных")
+        
+        from pathlib import Path
+        import json
+        
+        data_dir = Path("data")
+        if not data_dir.exists():
+            await update.message.reply_text(
+                "❌ **Папка data не найдена**\n\n"
+                "Создайте папку data и добавьте файлы пользователей"
+            )
+            return
+        
+        # Собираем информацию о файлах
+        info_text = "📊 **Информация о файлах данных**\n\n"
+        
+        # Проверяем папки пользователей
+        user_dirs = [d for d in data_dir.iterdir() if d.is_dir() and d.name.isdigit()]
+        info_text += f"👥 **Пользователей:** {len(user_dirs)}\n"
+        
+        total_files = 0
+        for user_dir in user_dirs:
+            files = list(user_dir.glob("*"))
+            total_files += len(files)
+            
+            # Проверяем accounts.json
+            accounts_file = user_dir / "accounts.json"
+            if accounts_file.exists():
+                try:
+                    with open(accounts_file, 'r', encoding='utf-8') as f:
+                        accounts = json.load(f)
+                    info_text += f"📁 **{user_dir.name}:** {len(files)} файлов, {len(accounts)} аккаунтов\n"
+                except:
+                    info_text += f"📁 **{user_dir.name}:** {len(files)} файлов, accounts.json поврежден\n"
+            else:
+                info_text += f"📁 **{user_dir.name}:** {len(files)} файлов, нет accounts.json\n"
+        
+        info_text += f"\n📈 **Всего файлов:** {total_files}\n"
+        
+        # Проверяем git статус
+        try:
+            import subprocess
+            result = subprocess.run(["git", "status", "--porcelain"], 
+                                  capture_output=True, text=True)
+            if result.stdout.strip():
+                info_text += f"\n🔄 **Git статус:** Есть изменения\n"
+                info_text += f"📋 **Файлы с изменениями:**\n"
+                for line in result.stdout.strip().split('\n')[:5]:  # Показываем первые 5
+                    info_text += f"   {line}\n"
+                if len(result.stdout.strip().split('\n')) > 5:
+                    info_text += f"   ... и еще {len(result.stdout.strip().split('\n')) - 5} файлов\n"
+            else:
+                info_text += f"\n✅ **Git статус:** Нет изменений\n"
+        except:
+            info_text += f"\n⚠️ **Git статус:** Не удалось проверить\n"
+        
+        await update.message.reply_text(info_text)
+        
+    except Exception as e:
+        logger.error(f"Ошибка в команде проверки данных: {e}")
+        await update.message.reply_text(
+            "❌ Произошла ошибка при проверке данных"
         )
