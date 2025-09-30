@@ -53,6 +53,19 @@ class SimpleDataSync:
         try:
             logger.info("Начинаем синхронизацию данных...")
             
+            # Проверяем, инициализирован ли git репозиторий
+            if not Path('.git').exists():
+                logger.error("Git репозиторий не инициализирован")
+                logger.info("Запускаю инициализацию git репозитория...")
+                try:
+                    from init_git_repo import init_git_repository
+                    if not init_git_repository():
+                        logger.error("Не удалось инициализировать git репозиторий")
+                        return False
+                except ImportError:
+                    logger.error("Модуль init_git_repo не найден")
+                    return False
+            
             # Настраиваем git
             if not self.setup_git():
                 logger.error("Не удалось настроить git")
