@@ -55,18 +55,19 @@ class SimpleDataSync:
     def _add_all_data_files(self):
         """Добавляет все файлы данных в git"""
         try:
-            # Добавляем все файлы в папке data
-            subprocess.run(["git", "add", str(self.data_dir)], check=True)
-            
-            # Добавляем конкретные файлы пользователей
-            for user_dir in self.data_dir.glob("*"):
-                if user_dir.is_dir():
-                    # Добавляем все файлы в папке пользователя
-                    subprocess.run(["git", "add", str(user_dir)], check=True)
-                    
-            logger.info("Все файлы данных добавлены в git")
+            # Простое добавление всей папки data
+            subprocess.run(["git", "add", "data/"], check=True)
+            logger.info("Файлы данных добавлены в git")
         except subprocess.CalledProcessError as e:
             logger.error(f"Ошибка добавления файлов: {e}")
+            # Пробуем добавить файлы по одному
+            try:
+                for user_dir in self.data_dir.glob("*"):
+                    if user_dir.is_dir():
+                        subprocess.run(["git", "add", str(user_dir)], check=True)
+                logger.info("Файлы пользователей добавлены по отдельности")
+            except subprocess.CalledProcessError:
+                logger.error("Не удалось добавить файлы данных")
     
     def sync_data(self):
         """Синхронизация данных с GitHub"""
@@ -104,10 +105,14 @@ class SimpleDataSync:
                 # Дополнительно добавляем все файлы в data
                 subprocess.run(["git", "add", str(self.data_dir)], check=True)
                 
-                # Добавляем конкретные типы файлов
-                for pattern in ["*.json", "*.csv", "*.txt"]:
-                    subprocess.run(["git", "add", f"{self.data_dir}/**/{pattern}"], 
-                                 check=True, shell=True)
+                # Добавляем файлы пользователей по отдельности
+                for user_dir in self.data_dir.glob("*"):
+                    if user_dir.is_dir() and user_dir.name.isdigit():
+                        try:
+                            subprocess.run(["git", "add", str(user_dir)], check=True)
+                        except subprocess.CalledProcessError:
+                            # Игнорируем ошибки для отдельных папок
+                            pass
                 
                 logger.info("Все файлы данных принудительно добавлены в git")
             except subprocess.CalledProcessError as e:
