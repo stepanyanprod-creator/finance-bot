@@ -113,9 +113,7 @@ def run_bot():
         app.add_handler(CommandHandler("init_git", init_git_command))
         app.add_handler(CommandHandler("check_data", check_data_command))
         app.add_handler(CommandHandler("upload_all", upload_all_command))
-        app.add_handler(CommandHandler("setup_auth", setup_auth_command))
-        app.add_handler(CommandHandler("set_token", set_token_command))
-        app.add_handler(CommandHandler("setup_render_auth", setup_render_auth_command))
+        # Удаленные команды аутентификации больше не используются
         app.add_handler(CommandHandler("force_sync_accounts", force_sync_accounts_command))
         
         # Команды синхронизации с Google Sheets
