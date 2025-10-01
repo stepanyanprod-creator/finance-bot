@@ -31,6 +31,8 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "• /import_csv — импорт балансов из CSV файла\n"
         "• /setbalance <amount> <currency> | /setbalance <amount> <category> <currency>\n"
         "• /balance — меню Баланс\n"
+        "• /sync_google — синхронизация с Google Sheets\n"
+        "• /setup_google — настройка Google Sheets\n"
         "• /menu — показать клавиатуру\n"
         "• /hidemenu — скрыть клавиатуру\n\n"
         "Раздел «🛍 Расходы» — в подменю.\n"
@@ -574,4 +576,75 @@ async def force_sync_accounts_command(update: Update, context: ContextTypes.DEFA
         "📊 Теперь используется база данных\n"
         "💾 Аккаунты сохраняются автоматически\n\n"
         "💡 Git синхронизация больше не нужна"
+    )
+
+# ==================== КОМАНДЫ СИНХРОНИЗАЦИИ С GOOGLE SHEETS ====================
+
+async def sync_google_sheets_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Команда синхронизации с Google Sheets"""
+    try:
+        user_id = get_user_id(update)
+        logger.info(f"Пользователь {user_id} запросил синхронизацию с Google Sheets")
+        
+        # Показываем прогресс
+        progress_msg = await update.message.reply_text("🔄 Синхронизация с Google Sheets...")
+        
+        try:
+            from app.services.google_sheets_sync import sync_to_google_sheets
+            
+            # Синхронизируем данные
+            result = sync_to_google_sheets(user_id)
+            
+            if result['success']:
+                await progress_msg.edit_text(
+                    f"✅ **Синхронизация завершена!**\n\n"
+                    f"📊 Данные успешно загружены в Google Sheets\n"
+                    f"🔗 **Ссылка:** {result['url']}\n\n"
+                    f"💡 Теперь вы можете:\n"
+                    f"• Редактировать данные в таблице\n"
+                    f"• Экспортировать в Numbers/Excel\n"
+                    f"• Делиться с другими пользователями"
+                )
+            else:
+                await progress_msg.edit_text(
+                    f"❌ **Ошибка синхронизации**\n\n"
+                    f"Причина: {result['message']}\n\n"
+                    f"💡 **Решение:**\n"
+                    f"1. Добавьте файл `google_credentials.json`\n"
+                    f"2. Настройте Google Sheets API\n"
+                    f"3. Попробуйте снова"
+                )
+                
+        except ImportError:
+            await progress_msg.edit_text(
+                "⚠️ **Google Sheets API не установлен**\n\n"
+                "Установите зависимости:\n"
+                "```bash\n"
+                "pip install gspread google-auth\n"
+                "```\n\n"
+                "💡 После установки перезапустите бота"
+            )
+            
+    except Exception as e:
+        logger.error(f"Ошибка в команде синхронизации с Google Sheets: {e}")
+        await update.message.reply_text(
+            "❌ Произошла ошибка при синхронизации с Google Sheets"
+        )
+
+async def setup_google_sheets_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Команда настройки Google Sheets"""
+    await update.message.reply_text(
+        "🔧 **НАСТРОЙКА GOOGLE SHEETS**\n\n"
+        "📋 **Инструкция:**\n"
+        "1. Перейдите: https://console.cloud.google.com/\n"
+        "2. Создайте новый проект или выберите существующий\n"
+        "3. Включите Google Sheets API и Google Drive API\n"
+        "4. Создайте учетные данные (Service Account)\n"
+        "5. Скачайте JSON файл с ключами\n"
+        "6. Переименуйте файл в `google_credentials.json`\n"
+        "7. Поместите файл в корень проекта\n\n"
+        "💡 **После настройки:**\n"
+        "• Используйте /sync_google для синхронизации\n"
+        "• Данные будут автоматически обновляться\n\n"
+        "🔗 **Альтернатива:** Используйте /export для CSV файлов"
     )

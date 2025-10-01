@@ -40,7 +40,8 @@ def run_bot():
         start_command, menu_command, hide_menu_command, export_csv_command,
         rules_list_command, setcat_command, delrule_command, setbalance_command,
         import_csv_command, export_balances_command, export_monthly_command, export_last_months_command,
-        sync_data_command, sync_status_command, force_sync_command, init_git_command, check_data_command, upload_all_command, setup_auth_command, set_token_command, setup_render_auth_command, force_sync_accounts_command
+        sync_data_command, sync_status_command, force_sync_command, init_git_command, check_data_command, upload_all_command, force_sync_accounts_command,
+        sync_google_sheets_command, setup_google_sheets_command
     )
     from app.handlers.balance import build_balance_conv
     from app.handlers.transfer import build_transfer_conv
@@ -116,6 +117,10 @@ def run_bot():
         app.add_handler(CommandHandler("set_token", set_token_command))
         app.add_handler(CommandHandler("setup_render_auth", setup_render_auth_command))
         app.add_handler(CommandHandler("force_sync_accounts", force_sync_accounts_command))
+        
+        # Команды синхронизации с Google Sheets
+        app.add_handler(CommandHandler("sync_google", sync_google_sheets_command))
+        app.add_handler(CommandHandler("setup_google", setup_google_sheets_command))
         
         # Конверсейшн: обмен между счетами (должен быть ПЕРЕД балансом)
         transfer_conv = build_transfer_conv()
