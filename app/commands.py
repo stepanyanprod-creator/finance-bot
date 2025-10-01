@@ -766,8 +766,17 @@ async def check_data_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
         # Проверяем git статус
         try:
             import subprocess
+            import os
+            # Убеждаемся, что мы в правильной директории
+            os.chdir(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
             result = subprocess.run(["git", "status", "--porcelain"], 
                                   capture_output=True, text=True)
+            
+            # Отладочная информация
+            current_dir = os.getcwd()
+            logger.info(f"Git status check in directory: {current_dir}")
+            logger.info(f"Git status output: '{result.stdout.strip()}'")
+            
             if result.stdout.strip():
                 info_text += f"\n🔄 **Git статус:** Есть изменения\n"
                 info_text += f"📋 **Файлы с изменениями:**\n"
