@@ -4,7 +4,7 @@ pillow==11.3.0
 python-dotenv==1.1.1
 python-telegram-bot==22.4
 flask==3.0.0
-sqlalchemy==2.0.23
+sqlalchemy==2.0.43
 alembic==1.13.1
 gspread==5.12.4
 google-auth==2.23.4
