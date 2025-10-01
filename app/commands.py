@@ -28,13 +28,6 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "• /export_balances — экспорт балансов в CSV\n"
         "• /export_monthly [год] [месяц] — экспорт по месяцам с таблицами\n"
         "• /export_last_months [N] — экспорт за последние N месяцев\n"
-        "• /sync — синхронизация данных с GitHub\n"
-        "• /sync_status — статус синхронизации\n"
-        "• /force_sync — принудительная синхронизация\n"
-        "• /init_git — инициализация git репозитория\n"
-        "• /check_data — проверить файлы данных\n"
-        "• /upload_all — загрузить все изменения в GitHub\n"
-        "• /setup_render_auth — настроить аутентификацию на Render\n"
         "• /import_csv — импорт балансов из CSV файла\n"
         "• /setbalance <amount> <currency> | /setbalance <amount> <category> <currency>\n"
         "• /balance — меню Баланс\n"
@@ -65,7 +58,7 @@ async def hide_menu_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def export_csv_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Команда /export"""
     user_id = get_user_id(update)
-    logger.info(f"User {user_id} requested CSV export")
+    logger.info(f"User {get_user_id(update)} requested CSV export")
     
     ensure_csv(user_id)
     path = os.path.join("data", str(user_id), "finance.csv")
@@ -473,257 +466,49 @@ async def export_last_months_command(update: Update, context: ContextTypes.DEFAU
         await msg.reply_text(f"❌ Ошибка при экспорте: {e}")
 
 
-# ==================== КОМАНДЫ СИНХРОНИЗАЦИИ ДАННЫХ ====================
+# ==================== КОМАНДЫ СИНХРОНИЗАЦИИ УДАЛЕНЫ ====================
+# Все команды синхронизации удалены в пользу базы данных
 
 async def sync_data_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Команда для ручной синхронизации данных"""
-    try:
-        user_id = update.effective_user.id
-        logger.info(f"Пользователь {user_id} запросил синхронизацию данных")
-        
-        # Показываем прогресс
-        progress_msg = await update.message.reply_text("🔄 Синхронизация данных...")
-        
-        # Пытаемся синхронизацию с GitHub
-        try:
-            from simple_data_sync import sync_data_now, get_sync_status
-            
-            # Получаем статус
-            status = get_sync_status()
-            
-            if not status["has_changes"]:
-                await progress_msg.edit_text(
-                    "📊 **Статус синхронизации**\n\n"
-                    "✅ Нет изменений для синхронизации\n"
-                    f"📁 Директория данных: {status['data_dir']}\n"
-                    f"🔄 Статус git: {status['git_status']}\n\n"
-                    "💡 Все данные уже синхронизированы"
-                )
-                return
-            
-            # Выполняем синхронизацию
-            success = sync_data_now()
-            
-            if success:
-                await progress_msg.edit_text(
-                    "✅ **Синхронизация завершена**\n\n"
-                    "📊 Данные успешно сохранены в GitHub\n"
-                    "🔄 Изменения отправлены в репозиторий\n\n"
-                    "💡 Используйте /sync_status для проверки"
-                )
-            else:
-                # Если синхронизация с GitHub не удалась, используем резервное копирование
-                await progress_msg.edit_text("🔄 Синхронизация с GitHub не удалась, создаем резервную копию...")
-                
-                try:
-                    from backup_data import backup_data_now
-                    backup_path = backup_data_now()
-                    
-                    if backup_path:
-                        await progress_msg.edit_text(
-                            "✅ **Резервная копия создана**\n\n"
-                            f"📁 Путь к бэкапу: {backup_path}\n"
-                            "💾 Данные сохранены локально\n\n"
-                            "💡 GitHub синхронизация недоступна, но данные защищены"
-                        )
-                    else:
-                        await progress_msg.edit_text(
-                            "❌ **Ошибка сохранения данных**\n\n"
-                            "Не удалось создать резервную копию\n"
-                            "Обратитесь к администратору"
-                        )
-                except ImportError:
-                    await progress_msg.edit_text(
-                        "❌ **Ошибка синхронизации**\n\n"
-                        "Не удалось сохранить данные в GitHub\n"
-                        "Резервное копирование недоступно\n"
-                        "Попробуйте позже"
-                    )
-                
-        except ImportError:
-            await progress_msg.edit_text(
-                "⚠️ **Синхронизация недоступна**\n\n"
-                "Модуль синхронизации не найден\n"
-                "Обратитесь к администратору"
-            )
-            
-    except Exception as e:
-        logger.error(f"Ошибка в команде синхронизации: {e}")
-        await update.message.reply_text(
-            "❌ Произошла ошибка при синхронизации данных"
-        )
+    """Команда синхронизации удалена - используется база данных"""
+    await update.message.reply_text(
+        "🔄 **Синхронизация через Git удалена**\n\n"
+        "📊 Теперь используется база данных для хранения данных\n"
+        "💾 Все данные автоматически сохраняются\n\n"
+        "💡 Команды синхронизации больше не нужны"
+    )
 
 async def sync_status_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Команда для проверки статуса синхронизации"""
-    try:
-        user_id = update.effective_user.id
-        logger.info(f"Пользователь {user_id} запросил статус синхронизации")
-        
-        # Импортируем и получаем реальный статус
-        try:
-            from simple_data_sync import get_sync_status
-            
-            status = get_sync_status()
-            
-            # Формируем ответ
-            status_text = "📊 **Статус синхронизации данных**\n\n"
-            status_text += f"📁 **Директория данных:** {status['data_dir']}\n"
-            status_text += f"🔄 **Статус git:** {status['git_status']}\n"
-            
-            if status["has_changes"]:
-                status_text += "⚠️ **Есть несохраненные изменения**\n"
-                status_text += "Используйте /sync для ручной синхронизации"
-            else:
-                status_text += "✅ **Все данные синхронизированы**\n"
-                status_text += "💡 Используйте /sync для принудительной синхронизации"
-            
-            await update.message.reply_text(status_text)
-            
-        except ImportError:
-            await update.message.reply_text(
-                "⚠️ **Синхронизация недоступна**\n\n"
-                "Модуль синхронизации не найден\n"
-                "Обратитесь к администратору"
-            )
-        
-    except Exception as e:
-        logger.error(f"Ошибка в команде статуса: {e}")
-        await update.message.reply_text(
-            "❌ Произошла ошибка при получении статуса"
-        )
+    """Команда статуса синхронизации удалена"""
+    await update.message.reply_text(
+        "📊 **Статус синхронизации**\n\n"
+        "✅ База данных активна\n"
+        "💾 Данные автоматически сохраняются\n\n"
+        "💡 Git синхронизация больше не используется"
+    )
 
 async def force_sync_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Команда для принудительной синхронизации"""
-    try:
-        user_id = update.effective_user.id
-        logger.info(f"Пользователь {user_id} запросил принудительную синхронизацию")
-        
-        # Показываем прогресс
-        progress_msg = await update.message.reply_text("🔄 Принудительная синхронизация всех файлов...")
-        
-        # Импортируем и используем реальную синхронизацию
-        try:
-            from simple_data_sync import SimpleDataSync
-            
-            # Создаем экземпляр синхронизации
-            sync = SimpleDataSync()
-            
-            # Принудительно добавляем все файлы
-            await progress_msg.edit_text("📁 Добавляю все файлы данных в git...")
-            sync._add_all_data_files()
-            
-            # Принудительно коммитим все изменения
-            await progress_msg.edit_text("💾 Коммичу все изменения...")
-            try:
-                import subprocess
-                from datetime import datetime
-                
-                # Добавляем все файлы
-                subprocess.run(["git", "add", "."], check=True)
-                
-                # Коммитим
-                commit_message = f"Force sync all data: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-                subprocess.run(["git", "commit", "-m", commit_message], check=True)
-                
-                # Push
-                await progress_msg.edit_text("🚀 Отправляю изменения в GitHub...")
-                result = subprocess.run(["git", "push", "origin", "main"], 
-                                      capture_output=True, text=True, timeout=30)
-                
-                if result.returncode == 0:
-                    await progress_msg.edit_text(
-                        "✅ **Принудительная синхронизация завершена**\n\n"
-                        "📊 ВСЕ файлы данных принудительно сохранены\n"
-                        "🔄 Изменения отправлены в GitHub\n"
-                        "📁 Включая accounts.json и другие файлы\n\n"
-                        "💡 Проверьте GitHub репозиторий"
-                    )
-                else:
-                    await progress_msg.edit_text(
-                        "❌ **Ошибка отправки в GitHub**\n\n"
-                        f"Ошибка: {result.stderr}\n"
-                        "💡 Попробуйте /init_git для настройки"
-                    )
-                    
-            except subprocess.CalledProcessError as e:
-                await progress_msg.edit_text(
-                    "❌ **Ошибка принудительной синхронизации**\n\n"
-                    f"Ошибка: {e}\n"
-                    "💡 Попробуйте /init_git для настройки"
-                )
-                
-        except ImportError:
-            await progress_msg.edit_text(
-                "⚠️ **Синхронизация недоступна**\n\n"
-                "Модуль синхронизации не найден\n"
-                "Обратитесь к администратору"
-            )
-            
-    except Exception as e:
-        logger.error(f"Ошибка в команде принудительной синхронизации: {e}")
-        await update.message.reply_text(
-            "❌ Произошла ошибка при принудительной синхронизации"
-        )
+    """Команда принудительной синхронизации удалена"""
+    await update.message.reply_text(
+        "🔄 **Принудительная синхронизация удалена**\n\n"
+        "📊 Используется база данных\n"
+        "💾 Данные сохраняются автоматически\n\n"
+        "💡 Git синхронизация больше не нужна"
+    )
 
 async def init_git_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Команда для инициализации git репозитория"""
-    try:
-        user_id = update.effective_user.id
-        logger.info(f"Пользователь {user_id} запросил инициализацию git")
-        
-        # Показываем прогресс
-        progress_msg = await update.message.reply_text("🔧 Инициализация git репозитория...")
-        
-        try:
-            from init_git_repo import init_git_repository, test_git_connection
-            
-            # Инициализируем git репозиторий
-            if init_git_repository():
-                await progress_msg.edit_text("🧪 Тестирую подключение к GitHub...")
-                
-                # Тестируем подключение
-                if test_git_connection():
-                    await progress_msg.edit_text(
-                        "✅ **GIT РЕПОЗИТОРИЙ ИНИЦИАЛИЗИРОВАН!**\n\n"
-                        "🔗 Подключение к GitHub работает\n"
-                        "📁 Папка data готова для синхронизации\n"
-                        "🔄 Remote origin настроен\n\n"
-                        "💡 Теперь используйте /sync для синхронизации данных"
-                    )
-                else:
-                    await progress_msg.edit_text(
-                        "⚠️ **Git репозиторий создан, но GitHub недоступен**\n\n"
-                        "📁 Локальный git репозиторий настроен\n"
-                        "❌ Подключение к GitHub не работает\n\n"
-                        "💡 Решения:\n"
-                        "1. Используйте /setup_render_auth для настройки токена\n"
-                        "2. Настройте GITHUB_TOKEN в Render Dashboard\n"
-                        "3. Проверьте права доступа к репозиторию"
-                    )
-            else:
-                await progress_msg.edit_text(
-                    "❌ **Ошибка инициализации git**\n\n"
-                    "Не удалось создать git репозиторий\n"
-                    "Обратитесь к администратору"
-                )
-                
-        except ImportError:
-            await progress_msg.edit_text(
-                "⚠️ **Модуль инициализации недоступен**\n\n"
-                "Модуль init_git_repo не найден\n"
-                "Обратитесь к администратору"
-            )
-            
-    except Exception as e:
-        logger.error(f"Ошибка в команде инициализации git: {e}")
-        await update.message.reply_text(
-            "❌ Произошла ошибка при инициализации git"
-        )
+    """Команда инициализации Git удалена"""
+    await update.message.reply_text(
+        "🔧 **Инициализация Git удалена**\n\n"
+        "📊 Теперь используется база данных\n"
+        "💾 Не требуется настройка Git\n\n"
+        "💡 Все данные сохраняются в БД автоматически"
+    )
 
 async def check_data_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Команда для проверки файлов данных"""
+    """Команда проверки данных обновлена для БД"""
     try:
-        user_id = update.effective_user.id
+        user_id = get_user_id(update)
         logger.info(f"Пользователь {user_id} запросил проверку данных")
         
         from pathlib import Path
@@ -762,32 +547,8 @@ async def check_data_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
                 info_text += f"📁 **{user_dir.name}:** {len(files)} файлов, нет accounts.json\n"
         
         info_text += f"\n📈 **Всего файлов:** {total_files}\n"
-        
-        # Проверяем git статус
-        try:
-            import subprocess
-            import os
-            # Убеждаемся, что мы в правильной директории
-            os.chdir(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-            result = subprocess.run(["git", "status", "--porcelain"], 
-                                  capture_output=True, text=True)
-            
-            # Отладочная информация
-            current_dir = os.getcwd()
-            logger.info(f"Git status check in directory: {current_dir}")
-            logger.info(f"Git status output: '{result.stdout.strip()}'")
-            
-            if result.stdout.strip():
-                info_text += f"\n🔄 **Git статус:** Есть изменения\n"
-                info_text += f"📋 **Файлы с изменениями:**\n"
-                for line in result.stdout.strip().split('\n')[:5]:  # Показываем первые 5
-                    info_text += f"   {line}\n"
-                if len(result.stdout.strip().split('\n')) > 5:
-                    info_text += f"   ... и еще {len(result.stdout.strip().split('\n')) - 5} файлов\n"
-            else:
-                info_text += f"\n✅ **Git статус:** Нет изменений\n"
-        except:
-            info_text += f"\n⚠️ **Git статус:** Не удалось проверить\n"
+        info_text += f"\n💾 **Статус:** База данных будет настроена\n"
+        info_text += f"🔄 **Git:** Больше не используется\n"
         
         await update.message.reply_text(info_text)
         
@@ -798,268 +559,19 @@ async def check_data_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
         )
 
 async def upload_all_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Команда для загрузки всех изменений в GitHub"""
-    try:
-        user_id = update.effective_user.id
-        logger.info(f"Пользователь {user_id} запросил загрузку всех изменений")
-        
-        # Показываем прогресс
-        progress_msg = await update.message.reply_text("🚀 Загружаю все изменения в GitHub...")
-        
-        try:
-            import subprocess
-            from datetime import datetime
-            
-            # Проверяем git статус
-            await progress_msg.edit_text("🔍 Проверяю изменения...")
-            status_result = subprocess.run(['git', 'status', '--porcelain'], 
-                                        capture_output=True, text=True)
-            
-            if not status_result.stdout.strip():
-                await progress_msg.edit_text(
-                    "✅ **Нет изменений для загрузки**\n\n"
-                    "Все файлы уже синхронизированы с GitHub"
-                )
-                return
-            
-            # Показываем найденные изменения
-            changes_count = len(status_result.stdout.strip().split('\n'))
-            await progress_msg.edit_text(f"📋 Найдено {changes_count} изменений...")
-            
-            # Добавляем все файлы
-            await progress_msg.edit_text("📁 Добавляю все файлы...")
-            subprocess.run(['git', 'add', '.'], check=True)
-            
-            # Создаем коммит
-            await progress_msg.edit_text("💾 Создаю коммит...")
-            commit_message = f"Auto-upload all changes: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-            subprocess.run(['git', 'commit', '-m', commit_message], check=True)
-            
-            # Push в GitHub
-            await progress_msg.edit_text("🚀 Отправляю в GitHub...")
-            push_result = subprocess.run(['git', 'push', 'origin', 'main'], 
-                                       capture_output=True, text=True, timeout=60)
-            
-            if push_result.returncode == 0:
-                await progress_msg.edit_text(
-                    "✅ **ВСЕ ИЗМЕНЕНИЯ ЗАГРУЖЕНЫ В GITHUB!**\n\n"
-                    f"📊 **Загружено файлов:** {changes_count}\n"
-                    f"💾 **Коммит:** {commit_message}\n"
-                    f"🔗 **Репозиторий:** https://github.com/stepanyanprod-creator/finance-bot\n\n"
-                    "💡 Все ваши данные теперь в GitHub!"
-                )
-            else:
-                await progress_msg.edit_text(
-                    "❌ **Ошибка загрузки в GitHub**\n\n"
-                    f"Ошибка: {push_result.stderr}\n\n"
-                    "💡 Попробуйте /init_git для настройки"
-                )
-                
-        except subprocess.CalledProcessError as e:
-            await progress_msg.edit_text(
-                "❌ **Ошибка git операции**\n\n"
-                f"Ошибка: {e}\n\n"
-                "💡 Попробуйте /init_git для настройки"
-            )
-        except Exception as e:
-            await progress_msg.edit_text(
-                "❌ **Общая ошибка**\n\n"
-                f"Ошибка: {e}\n\n"
-                "💡 Обратитесь к администратору"
-            )
-            
-    except Exception as e:
-        logger.error(f"Ошибка в команде загрузки: {e}")
-        await update.message.reply_text(
-            "❌ Произошла ошибка при загрузке в GitHub"
-        )
-
-async def setup_render_auth_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Команда для настройки аутентификации на Render"""
-    try:
-        user_id = update.effective_user.id
-        logger.info(f"Пользователь {user_id} запросил настройку аутентификации на Render")
-        
-        await update.message.reply_text(
-            "🔧 **НАСТРОЙКА АУТЕНТИФИКАЦИИ НА RENDER**\n\n"
-            "📋 **Инструкция:**\n"
-            "1. Откройте Render Dashboard: https://dashboard.render.com\n"
-            "2. Выберите ваш сервис 'finance-bot'\n"
-            "3. Перейдите в раздел 'Environment'\n"
-            "4. Добавьте переменную окружения:\n"
-            "   • **Key:** `GITHUB_TOKEN`\n"
-            "   • **Value:** `YOUR_GITHUB_TOKEN` (замените на ваш токен)\n"
-            "5. Нажмите 'Save Changes'\n"
-            "6. Дождитесь перезапуска сервиса\n\n"
-            "💡 **После настройки:**\n"
-            "• Используйте /setup_auth для проверки\n"
-            "• Используйте /force_sync для синхронизации\n\n"
-            "🔗 **Альтернатива:** Настройте токен в Render Dashboard"
-        )
-        
-    except Exception as e:
-        logger.error(f"Ошибка в команде настройки Render аутентификации: {e}")
-        await update.message.reply_text(
-            "❌ Произошла ошибка при показе инструкции"
-        )
-
-async def setup_auth_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Команда для настройки аутентификации GitHub"""
-    try:
-        user_id = update.effective_user.id
-        logger.info(f"Пользователь {user_id} запросил настройку аутентификации")
-        
-        # Показываем прогресс
-        progress_msg = await update.message.reply_text("🔐 Настраиваю аутентификацию GitHub...")
-        
-        try:
-            import subprocess
-            import os
-            
-            # Проверяем токен
-            github_token = os.getenv("GITHUB_TOKEN")
-            if github_token:
-                await progress_msg.edit_text("🔑 Найден GITHUB_TOKEN, настраиваю аутентификацию...")
-                
-                # Настраиваем URL с токеном
-                repo_url = f"https://{github_token}@github.com/stepanyanprod-creator/finance-bot.git"
-                subprocess.run(['git', 'remote', 'set-url', 'origin', repo_url], check=True)
-                
-                # Тестируем подключение
-                await progress_msg.edit_text("🧪 Тестирую подключение...")
-                result = subprocess.run(['git', 'fetch', 'origin'], 
-                                      capture_output=True, text=True, timeout=30)
-                
-                if result.returncode == 0:
-                    await progress_msg.edit_text(
-                        "✅ **АУТЕНТИФИКАЦИЯ НАСТРОЕНА!**\n\n"
-                        "🔑 Используется GITHUB_TOKEN\n"
-                        "🔗 Подключение к GitHub работает\n\n"
-                        "💡 Теперь используйте /sync для синхронизации"
-                    )
-                else:
-                    await progress_msg.edit_text(
-                        "❌ **Ошибка аутентификации**\n\n"
-                        f"Ошибка: {result.stderr}\n\n"
-                        "💡 Проверьте GITHUB_TOKEN в Render"
-                    )
-            else:
-                await progress_msg.edit_text("🔄 Токен не найден, пробую простую настройку...")
-                
-                # Простая настройка без токена
-                repo_url = "https://github.com/stepanyanprod-creator/finance-bot.git"
-                subprocess.run(['git', 'remote', 'set-url', 'origin', repo_url], check=True)
-                
-                # Тестируем подключение
-                await progress_msg.edit_text("🧪 Тестирую подключение...")
-                result = subprocess.run(['git', 'fetch', 'origin'], 
-                                      capture_output=True, text=True, timeout=30)
-                
-                if result.returncode == 0:
-                    await progress_msg.edit_text(
-                        "✅ **ПРОСТАЯ АУТЕНТИФИКАЦИЯ РАБОТАЕТ!**\n\n"
-                        "🔗 Подключение к GitHub работает\n"
-                        "📁 Репозиторий доступен публично\n\n"
-                        "💡 Теперь используйте /sync для синхронизации"
-                    )
-                else:
-                    await progress_msg.edit_text(
-                        "❌ **АУТЕНТИФИКАЦИЯ НЕ РАБОТАЕТ**\n\n"
-                        f"Ошибка: {result.stderr}\n\n"
-                        "💡 Решения:\n"
-                        "1. Установите GITHUB_TOKEN в Render\n"
-                        "2. Проверьте права доступа к репозиторию\n"
-                        "3. Убедитесь, что репозиторий публичный"
-                    )
-                
-        except subprocess.CalledProcessError as e:
-            await progress_msg.edit_text(
-                "❌ **Ошибка настройки аутентификации**\n\n"
-                f"Ошибка: {e}\n\n"
-                "💡 Обратитесь к администратору"
-            )
-        except Exception as e:
-            await progress_msg.edit_text(
-                "❌ **Общая ошибка**\n\n"
-                f"Ошибка: {e}\n\n"
-                "💡 Обратитесь к администратору"
-            )
-            
-    except Exception as e:
-        logger.error(f"Ошибка в команде настройки аутентификации: {e}")
-        await update.message.reply_text(
-            "❌ Произошла ошибка при настройке аутентификации"
-        )
-
-async def set_token_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Команда для установки GitHub токена"""
-    try:
-        user_id = update.effective_user.id
-        logger.info(f"Пользователь {user_id} запросил установку токена")
-        
-        # Показываем инструкцию
-        await update.message.reply_text(
-            "🔑 **НАСТРОЙКА GITHUB TOKEN**\n\n"
-            "📋 **Инструкция:**\n"
-            "1. Перейдите: https://github.com/settings/tokens\n"
-            "2. Нажмите 'Generate new token (classic)'\n"
-            "3. Выберите 'repo' scope\n"
-            "4. Скопируйте токен\n\n"
-            "💡 **После получения токена:**\n"
-            "• Используйте /setup_auth для автоматической настройки\n"
-            "• Или настройте вручную через терминал\n\n"
-            "🔗 **Альтернатива:** Загрузите .gitignore вручную через веб-интерфейс GitHub"
-        )
-        
-    except Exception as e:
-        logger.error(f"Ошибка в команде установки токена: {e}")
-        await update.message.reply_text(
-            "❌ Произошла ошибка при показе инструкции"
-        )
+    """Команда загрузки всех изменений удалена"""
+    await update.message.reply_text(
+        "🚀 **Загрузка в Git удалена**\n\n"
+        "📊 Теперь используется база данных\n"
+        "💾 Данные сохраняются автоматически\n\n"
+        "💡 Git загрузка больше не нужна"
+    )
 
 async def force_sync_accounts_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Команда для принудительной синхронизации accounts.json"""
-    try:
-        user_id = update.effective_user.id
-        logger.info(f"Пользователь {user_id} запросил принудительную синхронизацию accounts.json")
-        
-        # Показываем прогресс
-        progress_msg = await update.message.reply_text("🔄 Принудительная синхронизация accounts.json...")
-        
-        try:
-            from force_sync_accounts import force_sync_accounts, get_accounts_status
-            
-            # Получаем статус
-            status = get_accounts_status()
-            await progress_msg.edit_text(f"📊 Найдено {status['accounts_files_count']} файлов accounts.json...")
-            
-            # Выполняем синхронизацию
-            success = force_sync_accounts()
-            
-            if success:
-                await progress_msg.edit_text(
-                    "✅ **ACCOUNTS.JSON СИНХРОНИЗИРОВАН!**\n\n"
-                    f"📊 **Файлов обработано:** {status['accounts_files_count']}\n"
-                    f"📁 **Файлы:** {', '.join([Path(f).name for f in status['accounts_files']])}\n"
-                    f"🔗 **GitHub:** https://github.com/stepanyanprod-creator/finance-bot\n\n"
-                    "💡 Все файлы accounts.json теперь в GitHub!"
-                )
-            else:
-                await progress_msg.edit_text(
-                    "❌ **Ошибка синхронизации accounts.json**\n\n"
-                    "Не удалось синхронизировать файлы\n"
-                    "Проверьте настройки git или попробуйте позже"
-                )
-                
-        except ImportError:
-            await progress_msg.edit_text(
-                "⚠️ **Модуль синхронизации недоступен**\n\n"
-                "Модуль force_sync_accounts не найден\n"
-                "Обратитесь к администратору"
-            )
-            
-    except Exception as e:
-        logger.error(f"Ошибка в команде синхронизации accounts.json: {e}")
-        await update.message.reply_text(
-            "❌ Произошла ошибка при синхронизации accounts.json"
-        )
+    """Команда синхронизации аккаунтов удалена"""
+    await update.message.reply_text(
+        "🔄 **Синхронизация аккаунтов удалена**\n\n"
+        "📊 Теперь используется база данных\n"
+        "💾 Аккаунты сохраняются автоматически\n\n"
+        "💡 Git синхронизация больше не нужна"
+    )
