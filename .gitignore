@@ -152,3 +152,11 @@ logs/
 # data/
 # exports/
 # backups/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Google credentials
+google_credentials.json
